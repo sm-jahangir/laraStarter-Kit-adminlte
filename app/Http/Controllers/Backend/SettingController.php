@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Backend;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\File;
 use Intervention\Image\Facades\Image;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
@@ -29,7 +29,9 @@ class SettingController extends Controller
         Setting::updateOrCreate(['name' => 'video_3'], ['value' => $request->get('video_3')]);
 
         // Update .env file
-        Artisan::call("env:set APP_NAME='" . $request->site_title . "'");
+        overWriteEnvFile('APP_NAME', $request->site_title);
+        // overWriteEnvFile('YOUR_DOMAIN', trimDomain(env('APP_URL')));
+
         notify()->success('Settings Successfully Updated.', 'Success');
         Setting::updateOrCreate(['name' => 'site_description'], ['value' => $request->get('site_description')]);
         Setting::updateOrCreate(['name' => 'site_address'], ['value' => $request->get('site_address')]);
@@ -47,15 +49,17 @@ class SettingController extends Controller
         ]);
         // Site Logo
         if ($request->hasFile('site_logo')) {
-            $settings = Setting::updateOrCreate(
-                ['name' => 'site_logo'],
-            );
+            
+            CreateFolder('uploads/logos');
+
             $site_logo_image       = $request->file('site_logo');
-            $filename    = 'about-.' . $site_logo_image->getClientOriginalExtension();
+            $filename    = 'logo.' . $site_logo_image->getClientOriginalExtension();
 
             $site_logo_image_resize = Image::make($site_logo_image->getRealPath());
             $site_logo_image_resize->fit(300, 300);
             $site_logo_image_resize->save(public_path('uploads/logos/' . $filename));
+            
+            $settings = Setting::updateOrCreate(['name' => 'site_logo'],['value' => $filename]);
             $settings->update();
         }
         // Site Logo
@@ -67,6 +71,7 @@ class SettingController extends Controller
             $filename    = 'favicon-.' . $site_fav_icon->getClientOriginalExtension();
             $site_fav_icon_resize = Image::make($site_fav_icon->getRealPath());
             // $site_fav_icon_resize->fit(300, 300);
+            CreateFolder('uploads/logos'); //create an folder in backend if folder not exist
             $site_fav_icon_resize->save(public_path('uploads/logos/' . $filename));
             $settings->update();
         }
@@ -104,14 +109,15 @@ class SettingController extends Controller
         Setting::updateOrCreate(['name' => 'mail_from_name'], ['value' => $request->get('mail_from_name')]);
 
         // Update .env mail settings
-        Artisan::call("env:set MAIL_MAILER='" . $request->mail_mailer . "'");
-        Artisan::call("env:set MAIL_HOST='" . $request->mail_host . "'");
-        Artisan::call("env:set MAIL_PORT='" . $request->mail_port . "'");
-        Artisan::call("env:set MAIL_USERNAME='" . $request->mail_username . "'");
-        Artisan::call("env:set MAIL_PASSWORD='" . $request->mail_password . "'");
-        Artisan::call("env:set MAIL_ENCRYPTION='" . $request->mail_encryption . "'");
-        Artisan::call("env:set MAIL_FROM_ADDRESS='" . $request->mail_from_address . "'");
-        Artisan::call("env:set MAIL_FROM_NAME='" . $request->mail_from_name . "'");
+        overWriteEnvFile('MAIL_MAILER', $request->mail_mailer);
+        overWriteEnvFile('MAIL_HOST', $request->mail_host);
+        overWriteEnvFile('MAIL_PORT', $request->mail_port);
+        overWriteEnvFile('MAIL_USERNAME', $request->mail_username);
+        overWriteEnvFile('MAIL_PASSWORD', $request->mail_password);
+        overWriteEnvFile('MAIL_ENCRYPTION', $request->mail_encryption);
+        overWriteEnvFile('MAIL_FROM_ADDRESS', $request->mail_from_address);
+        overWriteEnvFile('MAIL_FROM_NAME', $request->mail_from_name);
+
         notify()->success('Settings Successfully Updated.', 'Success');
         return back();
     }
@@ -144,14 +150,14 @@ class SettingController extends Controller
         Setting::updateOrCreate(['name' => 'github_client_secret'], ['value' => $request->get('github_client_secret')]);
 
         // Update .env file
-        Artisan::call("env:set FACEBOOK_CLIENT_ID='" . $request->facebook_client_id . "'");
-        Artisan::call("env:set FACEBOOK_CLIENT_SECRET='" . $request->facebook_client_secret . "'");
-
-        Artisan::call("env:set GOOGLE_CLIENT_ID='" . $request->google_client_id . "'");
-        Artisan::call("env:set GOOGLE_CLIENT_SECRET='" . $request->google_client_secret . "'");
-
-        Artisan::call("env:set GITHUB_CLIENT_ID='" . $request->github_client_id . "'");
-        Artisan::call("env:set GITHUB_CLIENT_SECRET='" . $request->github_client_secret . "'");
+        overWriteEnvFile('FACEBOOK_CLIENT_ID', $request->facebook_client_id);
+        overWriteEnvFile('FACEBOOK_CLIENT_SECRET', $request->facebook_client_secret);
+        
+        overWriteEnvFile('GOOGLE_CLIENT_ID', $request->google_client_id);
+        overWriteEnvFile('GOOGLE_CLIENT_SECRET', $request->google_client_secret);
+        
+        overWriteEnvFile('GITHUB_CLIENT_ID', $request->github_client_id);
+        overWriteEnvFile('GITHUB_CLIENT_SECRET', $request->github_client_secret);
 
         notify()->success('Settings Successfully Updated.', 'Success');
         return back();
